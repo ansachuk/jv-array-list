@@ -5,13 +5,13 @@ import java.util.NoSuchElementException;
 public class ArrayList<T> implements List<T> {
     private static final int DEFAULT_CAPACITY = 10;
 
-    private int maxCapacity;
+    private int currentCapacity;
     private int size;
     private Object[] inner;
 
     public ArrayList() {
         this.inner = new Object[DEFAULT_CAPACITY];
-        this.maxCapacity = DEFAULT_CAPACITY;
+        this.currentCapacity = DEFAULT_CAPACITY;
         this.size = 0;
     }
 
@@ -25,8 +25,8 @@ public class ArrayList<T> implements List<T> {
 
     @Override
     public void add(T value, int index) {
-        if (index > size || index < 0) {
-            throw new ArrayListIndexOutOfBoundsException("Can't add element to index "
+        if (size < index || index < 0) {
+            throwExceptionIfInvalidIndex("Can't add element to index "
                     + index);
         } else if (index == size) {
             add(value);
@@ -55,7 +55,7 @@ public class ArrayList<T> implements List<T> {
     @Override
     public T get(int index) {
         if (size < index + 1 || index < 0) {
-            throw new ArrayListIndexOutOfBoundsException("Can't reach element with index "
+            throwExceptionIfInvalidIndex("Can't reach element with index "
                     + index);
         }
 
@@ -76,7 +76,7 @@ public class ArrayList<T> implements List<T> {
     @Override
     public T remove(int index) {
         if (size < index + 1 || index < 0) {
-            throw new ArrayListIndexOutOfBoundsException("Can't reach element with index "
+            throwExceptionIfInvalidIndex("Can't reach element with index "
                     + index
                     + ". You need to add it first, or change the index ro correct one.");
         }
@@ -101,7 +101,7 @@ public class ArrayList<T> implements List<T> {
     public T remove(T element) {
         int deletedElementIndex = -1;
 
-        for (int i = 0; i < inner.length; i++) {
+        for (int i = 0; i < size; i++) {
             if (element == inner[i] || (element != null && element.equals(inner[i]))) {
                 deletedElementIndex = i;
                 break;
@@ -132,17 +132,21 @@ public class ArrayList<T> implements List<T> {
     }
 
     private void checkIfGrowingIsNeed() {
-        if (maxCapacity - 1 == size) {
+        if (currentCapacity == size) {
             grow();
         }
     }
 
     private void grow() {
-        maxCapacity = maxCapacity + (maxCapacity >> 1);
-        Object[] newInner = new Object[maxCapacity];
+        currentCapacity = currentCapacity + (currentCapacity >> 1);
+        Object[] newInner = new Object[currentCapacity];
         System.arraycopy(inner, 0, newInner, 0, inner.length);
 
         inner = newInner;
+    }
+
+    private void throwExceptionIfInvalidIndex(String message) {
+        throw new ArrayListIndexOutOfBoundsException(message);
     }
 
     private Object[][] splitInnerArrayByIndex(int index) {
