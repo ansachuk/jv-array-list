@@ -2,9 +2,10 @@ package core.basesyntax;
 
 import java.util.Arrays;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 public class ArrayList<T> implements List<T> {
-    private final int DEFAULT_CAPACITY = 10;
+    private static final int DEFAULT_CAPACITY = 10;
 
     private int maxCapacity;
     private int size;
@@ -26,15 +27,19 @@ public class ArrayList<T> implements List<T> {
 
     @Override
     public void add(T value, int index) {
-        if (index > size) {
+        if (index > size || index < 0) {
             throw new ArrayListIndexOutOfBoundsException("Can't add element to index "
                     + index);
         } else if (index == size) {
             add(value);
         } else {
-            Object[] prePart  = Arrays.copyOfRange(inner, 0, index);
-            Object[] postPart = Arrays.copyOfRange(inner, index - 1, inner.length);
-            postPart[0] = value;
+            Object[] prePart = Arrays.copyOfRange(inner, 0, index == 0 ? index + 1 : index);
+            Object[] postPart = Arrays.copyOfRange(inner, index == 0 ? 0 : index - 1, inner.length);
+            if (index == 0) {
+                prePart[0] = value;
+            } else {
+                postPart[0] = value;
+            }
 
             Object[] result = Arrays.copyOf(prePart, prePart.length + postPart.length);
             System.arraycopy(postPart, 0, result, prePart.length, postPart.length);
@@ -53,7 +58,7 @@ public class ArrayList<T> implements List<T> {
 
     @Override
     public T get(int index) {
-        if (size < index + 1) {
+        if (size < index + 1 || index < 0) {
             throw new ArrayListIndexOutOfBoundsException("Can't reach element with index "
                     + index);
         }
@@ -63,7 +68,7 @@ public class ArrayList<T> implements List<T> {
 
     @Override
     public void set(T value, int index) {
-        if (size < index + 1) {
+        if (size < index + 1 || index < 0) {
             throw new ArrayListIndexOutOfBoundsException("Can't reach element with index "
                     + index
                     + ". You need to add it first, or change the index ro correct one.");
@@ -74,13 +79,13 @@ public class ArrayList<T> implements List<T> {
 
     @Override
     public T remove(int index) {
-        if (size < index + 1) {
-            throw new NoSuchElementException("Can't reach element with index "
+        if (size < index + 1 || index < 0) {
+            throw new ArrayListIndexOutOfBoundsException("Can't reach element with index "
                     + index
                     + ". You need to add it first, or change the index ro correct one.");
         }
 
-        T deletedElement = (T) inner[index];
+        final T deletedElement = (T) inner[index];
 
         Object[] prePart = Arrays.copyOf(inner, index);
         Object[] postPart = Arrays.copyOfRange(inner, index + 1, inner.length);
@@ -88,13 +93,33 @@ public class ArrayList<T> implements List<T> {
         inner = Arrays.copyOf(prePart, maxCapacity);
         System.arraycopy(postPart, 0, inner, prePart.length, postPart.length);
 
+        size--;
 
         return deletedElement;
     }
 
     @Override
     public T remove(T element) {
-        return null;
+        int deletedElementIndex = -1;
+
+        for (int i = 0; i < inner.length; i++) {
+            if (Objects.equals(inner[i], element)) {
+                deletedElementIndex = i;
+                break;
+            }
+        }
+
+        if (deletedElementIndex == -1) {
+            throw new NoSuchElementException("Can't find"
+                    + element
+                    + " element");
+        }
+
+        T deletedElement = get(deletedElementIndex);
+
+        remove(deletedElementIndex);
+
+        return deletedElement;
     }
 
     @Override
@@ -104,7 +129,7 @@ public class ArrayList<T> implements List<T> {
 
     @Override
     public boolean isEmpty() {
-        return false;
+        return size == 0;
     }
 
     private void checkIfGrowingIsNeed() {
