@@ -1,8 +1,6 @@
 package core.basesyntax;
 
-import java.util.Arrays;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 
 public class ArrayList<T> implements List<T> {
     private static final int DEFAULT_CAPACITY = 10;
@@ -33,16 +31,14 @@ public class ArrayList<T> implements List<T> {
         } else if (index == size) {
             add(value);
         } else {
-            Object[] prePart = Arrays.copyOfRange(inner, 0, index == 0 ? index + 1 : index);
-            Object[] postPart = Arrays.copyOfRange(inner, index == 0 ? 0 : index - 1, inner.length);
-            if (index == 0) {
-                prePart[0] = value;
-            } else {
-                postPart[0] = value;
-            }
+            Object[][] separated = splitInnerArrayByIndex(index);
+            Object[] prePart = separated[0];
+            Object[] postPart = separated[1];
 
-            Object[] result = Arrays.copyOf(prePart, prePart.length + postPart.length);
-            System.arraycopy(postPart, 0, result, prePart.length, postPart.length);
+            Object[] result = new Object[prePart.length + postPart.length + 1];
+            System.arraycopy(prePart, 0, result, 0, prePart.length);
+            result[index] = value;
+            System.arraycopy(postPart, 0, result, index + 1, postPart.length);
 
             inner = result;
             size++;
@@ -87,12 +83,15 @@ public class ArrayList<T> implements List<T> {
 
         final T deletedElement = (T) inner[index];
 
-        Object[] prePart = Arrays.copyOf(inner, index);
-        Object[] postPart = Arrays.copyOfRange(inner, index + 1, inner.length);
+        Object[][] separated = splitInnerArrayByIndex(index);
+        Object[] prePart = separated[0];
+        Object[] postPart = separated[1];
 
-        inner = Arrays.copyOf(prePart, maxCapacity);
-        System.arraycopy(postPart, 0, inner, prePart.length, postPart.length);
+        Object[] result = new Object[prePart.length + postPart.length - 1];
+        System.arraycopy(prePart, 0, result, 0, prePart.length);
+        System.arraycopy(postPart, 1, result, index, postPart.length - 1);
 
+        inner = result;
         size--;
 
         return deletedElement;
@@ -103,7 +102,7 @@ public class ArrayList<T> implements List<T> {
         int deletedElementIndex = -1;
 
         for (int i = 0; i < inner.length; i++) {
-            if (Objects.equals(inner[i], element)) {
+            if (element == inner[i] || (element != null && element.equals(inner[i]))) {
                 deletedElementIndex = i;
                 break;
             }
@@ -139,7 +138,22 @@ public class ArrayList<T> implements List<T> {
     }
 
     private void grow() {
-        maxCapacity = maxCapacity + maxCapacity / 2;
-        inner = Arrays.copyOf(inner, maxCapacity);
+        maxCapacity = maxCapacity + (maxCapacity >> 1);
+        Object[] newInner = new Object[maxCapacity];
+        System.arraycopy(inner, 0, newInner, 0, inner.length);
+
+        inner = newInner;
+    }
+
+    private Object[][] splitInnerArrayByIndex(int index) {
+        Object[] prePart = new Object[index];
+        Object[] postPart = new Object[inner.length - index];
+
+        System.arraycopy(inner, 0, prePart, 0, index);
+        System.arraycopy(inner, index, postPart, 0, inner.length - index);
+
+        return new Object[][]{
+                prePart, postPart
+        };
     }
 }
